@@ -3,56 +3,44 @@
 #include "Physics.hpp"
 
 
-class LightEmitter
+class Mode
 {
     public:
-        virtual Vec3 GetElectricalField(Vec3 point) const = 0;
+        virtual void SetFrequency(double frequency);
+        virtual double GetFrequency() const;
+        virtual Vec3 GetField(Vec3 point) const = 0;
+
+    protected:
+        double m_frequency;
 };
 
-class MechanicalEmitter
-{
-    public: 
-        virtual Vec3 GetMechanicalField(Vec3 point) const = 0;
-};
-
-class StandingLightEmitter : public LightEmitter
+class PlaneLightMode : public Mode
 {
     public:
-        StandingLightEmitter():
-            m_center(Vec3(0, 0, 0)),
-            m_propagation(Vec3(1, 0, 0)),
-            m_perturbation(Vec3(0, 1, 0)),
-            m_frequency(1)
-        {}
+        PlaneLightMode();
         
         void SetCenter(const Vec3 &center);
         void SetPropagation(const Vec3 &propagation);
         void SetPerturbation(const Vec3 &perturbation);
-        void SetFrequency(const double frequency);
         
         const Vec3 &GetCenter() const;
         const Vec3 &GetPropagation() const;
         const Vec3 &GetPerturbation() const;
+        
         Vec3 GetNode(const float index) const;
         
-        Vec3 GetElectricalField(Vec3 point) const override;
+        Vec3 GetField(Vec3 point) const override;
 
     private:
         Vec3 m_center;
         Vec3 m_propagation;
         Vec3 m_perturbation;
-        double m_frequency;
 };
 
-class StandingMechanicalEmitter : public MechanicalEmitter
+class PlaneMechanicalMode : public Mode
 {
     public:
-        StandingMechanicalEmitter():
-            m_center(Vec3(0, 0, 0)),
-            m_propagation(Vec3(1, 0, 0)),
-            m_perturbation(Vec3(0, 1, 0)),
-            m_frequency(1)
-        {}
+        PlaneMechanicalMode();
         
         void SetCenter(const Vec3 &center);
         void SetPropagation(const Vec3 &propagation);
@@ -62,12 +50,11 @@ class StandingMechanicalEmitter : public MechanicalEmitter
         const Vec3 &GetPropagation() const;
         const Vec3 &GetPerturbation() const;
         
-        Vec3 GetMechanicalField(Vec3 point) const override;
+        Vec3 GetField(Vec3 point) const override;
 
     private:
         Vec3 m_center;
         Vec3 m_propagation;
         Vec3 m_perturbation;
-        double m_frequency;
 };
 

@@ -14,6 +14,6 @@ class Object
         
     private:
         std::vector<Surface> m_surfaces;
-        double m_dielectric_constant = 1.0f;
+        double m_dielectric_constant = 10.0f;
 };
 

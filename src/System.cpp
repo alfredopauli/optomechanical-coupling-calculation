@@ -1,56 +1,71 @@
 #include "System.hpp"
 
+
 System::~System()
 {
-    for (LightEmitter *light_emitter : m_light_emitters)
-        delete light_emitter;
+    for (Mode *light_mode : m_light_modes)
+        delete light_mode;
     
-    for (MechanicalEmitter *mechanical_emitter : m_mechanical_emitters)
-        delete mechanical_emitter;
+    for (Mode *mechanical_mode : m_mechanical_modes)
+        delete mechanical_mode;
 }
 
-Object &System::CreateObject()
+Object *System::CreateObject()
 {
-    m_objects.push_back(Object());
-    return m_objects[m_objects.size() - 1];
+    Object *object = new Object();
+    m_objects.push_back(object);
+    return object;
 }
 
-void System::AddLightEmitter(LightEmitter *light_emitter)
+double System::CalculateOptomechanicalCoupling_MB() const
 {
-    m_light_emitters.push_back(light_emitter);
+    double constant = 0.0f;
+    double frequency = m_light_modes[0]->GetFrequency(); // (???)
+    double delta;
+
+    for (const Mode *light_mode : m_light_modes)
+    for (const Mode *mechanical_mode : m_mechanical_modes)
+    for (const Object *object : m_objects)
+    {
+        // e - e0 = k*e0 - e0 = e0 (k - 1)
+        delta = (object->GetDielectricConstant() - 1) * E0_VACUUM;
+
+        for (const Surface &surface : object->GetSurface())
+        for (const Triangle &triangle : surface.GetTriangles())
+        {
+            Vec3 point = triangle.CalculateMidpoint();
+            
+            // For linear dielectrics
+            Vec3 D = object->GetDielectricConstant() * E0_VACUUM * light_mode->GetField(point);
+
+            double electric_field_parallel = Vec3::Cross(surface.GetNormal(), light_mode->GetField(point)).Magnitude();
+            double electric_displacement_perpendicular = surface.GetNormal() * D;
+
+            constant += 
+                triangle.CalculateArea() * (surface.GetNormal() * mechanical_mode->GetField(point)) *
+                (delta * pow(electric_field_parallel, 2) - (1.0 / delta) * pow(electric_displacement_perpendicular, 2));
+        }
+    }
+    
+    return -(frequency / 2.0) * constant;
 }
 
-void System::AddMechanicalEmitter(MechanicalEmitter *mechanical_emitter)
+double System::CalculateOptomechanicalCoupling_PE() const
 {
-    m_mechanical_emitters.push_back(mechanical_emitter);
+    return 0.0;
+}
+
+double System::CalculateNormalization() const
+{
+    return 1.0;
 }
 
 double System::CalculateOptomechanicalCoupling() const
 {
-    double constant = 0.0f;
-    double delta = 1;
-    double e0 = 1;
-
-    for (const LightEmitter *light_emitter : m_light_emitters)
-    for (const MechanicalEmitter *mechanical_emitter : m_mechanical_emitters)
-    for (const Object &object : m_objects)
-    for (const Surface &surface : object.GetSurface())
-    for (const Triangle &triangle : surface.GetTriangles())
-    {
-        Vec3 point = triangle.GetMidpoint();
-
-        Vec3 D = object.GetDielectricConstant() * e0 * light_emitter->GetElectricalField(point);
-        double electric_field_parallel = Vec3::Cross(surface.GetNormal(), light_emitter->GetElectricalField(point)).Magnitude();
-        double electric_displacement_perpendicular = surface.GetNormal() * D;
-
-        constant +=
-            (triangle.GetArea() * surface.GetNormal()) *
-            (mechanical_emitter->GetMechanicalField(point)) *
-            (delta * pow(electric_field_parallel, 2)
-             - pow(delta, -1) * pow(electric_displacement_perpendicular, 2));
-    }
-    
-    return constant;
+    double coupling = 0.0;
+    coupling += CalculateOptomechanicalCoupling_MB();
+    coupling += CalculateOptomechanicalCoupling_PE();
+    coupling /= CalculateNormalization();
+    return coupling;
 }
-
 

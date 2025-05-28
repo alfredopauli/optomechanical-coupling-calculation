@@ -6,15 +6,10 @@ void Surface::DefineNormal(Vec3 normal)
     m_normal = normal;
 }
 
-Vec3 Surface::GetNormal() const
-{
-    return m_normal;
-}
-
 void Surface::AddTriangle(Triangle triangle)
 {
     m_triangles.push_back(triangle);
-    m_midpoint = (m_midpoint * (m_triangles.size() - 1) + triangle.GetMidpoint()) / m_triangles.size();
+    m_midpoint = (m_midpoint * (m_triangles.size() - 1) + triangle.CalculateMidpoint()) / m_triangles.size();
 }
 
 const std::vector<Triangle>& Surface::GetTriangles() const
@@ -22,7 +17,12 @@ const std::vector<Triangle>& Surface::GetTriangles() const
     return m_triangles;
 }
 
-Vec3 Surface::GetMidpoint() const
+const Vec3 &Surface::GetNormal() const
+{
+    return m_normal;
+}
+
+const Vec3 &Surface::GetMidpoint() const
 {
     return m_midpoint;
 }
@@ -39,7 +39,7 @@ std::vector<Triangle> Surface::m_RecursiveCreateMesh(const std::vector<Triangle>
 
     for (auto &triangle : previous)
     {
-        if (triangle.GetArea() < threshold)
+        if (triangle.CalculateArea() < threshold)
         {
             next_triangles.push_back(triangle);
             continue;

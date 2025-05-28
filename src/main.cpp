@@ -8,30 +8,30 @@
 #include "Surface.hpp"
 #include "Object.hpp"
 #include "System.hpp"
-#include "Emitter.hpp"
+#include "Mode.hpp"
 
 
-void DrawObject(const Object &object)
+void DrawObject(const Object *object)
 {
-    for (const Surface &surface : object.GetSurface())
+    for (const Surface &surface : object->GetSurface())
     {
         for (const Triangle &triangle : surface.GetTriangles())
         {
             DrawLine3D(
-                    (Vector3){ (float)triangle.GetPoint(0).x, (float)triangle.GetPoint(0).y, (float)triangle.GetPoint(0).z }, 
-                    (Vector3){ (float)triangle.GetPoint(1).x, (float)triangle.GetPoint(1).y, (float)triangle.GetPoint(1).z },
-                    WHITE
-                    );
+                (Vector3){ (float)triangle.GetPoint(0).x, (float)triangle.GetPoint(0).y, (float)triangle.GetPoint(0).z }, 
+                (Vector3){ (float)triangle.GetPoint(1).x, (float)triangle.GetPoint(1).y, (float)triangle.GetPoint(1).z },
+                WHITE
+                );
             DrawLine3D(
-                    (Vector3){ (float)triangle.GetPoint(1).x, (float)triangle.GetPoint(1).y, (float)triangle.GetPoint(1).z }, 
-                    (Vector3){ (float)triangle.GetPoint(2).x, (float)triangle.GetPoint(2).y, (float)triangle.GetPoint(2).z },
-                    WHITE
-                    );
+                (Vector3){ (float)triangle.GetPoint(1).x, (float)triangle.GetPoint(1).y, (float)triangle.GetPoint(1).z }, 
+                (Vector3){ (float)triangle.GetPoint(2).x, (float)triangle.GetPoint(2).y, (float)triangle.GetPoint(2).z },
+                WHITE
+                );
             DrawLine3D(
-                    (Vector3){ (float)triangle.GetPoint(2).x, (float)triangle.GetPoint(2).y, (float)triangle.GetPoint(2).z }, 
-                    (Vector3){ (float)triangle.GetPoint(0).x, (float)triangle.GetPoint(0).y, (float)triangle.GetPoint(0).z },
-                    WHITE
-                    );
+                (Vector3){ (float)triangle.GetPoint(2).x, (float)triangle.GetPoint(2).y, (float)triangle.GetPoint(2).z }, 
+                (Vector3){ (float)triangle.GetPoint(0).x, (float)triangle.GetPoint(0).y, (float)triangle.GetPoint(0).z },
+                WHITE
+                );
         }
         
         Vec3 midpoint = surface.GetMidpoint();
@@ -45,11 +45,11 @@ void DrawObject(const Object &object)
     }
 }
 
-void DrawMechanicalEmitter(const StandingMechanicalEmitter &emitter)
+void DrawMechanicalEmitter(const PlaneMechanicalMode *mode)
 {
-    Vec3 propagation = emitter.GetPropagation();
-    Vec3 perturbation = emitter.GetPerturbation();
-    Vec3 center = emitter.GetCenter();
+    Vec3 propagation = mode->GetPropagation();
+    Vec3 perturbation = mode->GetPerturbation();
+    Vec3 center = mode->GetCenter();
     
     Vec3 propagation_end = center + propagation * 0.5f;
     Vec3 perturbation_end = center + perturbation * 0.5f / perturbation.Magnitude();
@@ -77,11 +77,11 @@ void DrawMechanicalEmitter(const StandingMechanicalEmitter &emitter)
     );
 }
 
-void DrawLightEmitter(const StandingLightEmitter &emitter)
+void DrawLightEmitter(const PlaneLightMode *mode)
 {
-    Vec3 propagation = emitter.GetPropagation();
-    Vec3 perturbation = emitter.GetPerturbation();
-    Vec3 center = emitter.GetCenter();
+    Vec3 propagation = mode->GetPropagation();
+    Vec3 perturbation = mode->GetPerturbation();
+    Vec3 center = mode->GetCenter();
     
     Vec3 propagation_end = center + propagation * 0.5f;
     Vec3 perturbation_end = center + perturbation * 0.5f / perturbation.Magnitude();
@@ -110,9 +110,9 @@ void DrawLightEmitter(const StandingLightEmitter &emitter)
     
     for (int i=0; i < 20; i++)
     {
-        Vec3 node = emitter.GetNode(i/5.0); 
+        Vec3 node = mode->GetNode(i/5.0); 
         DrawSphere(node.ToVector3(), 0.02f, YELLOW);
-        Vec3 field = emitter.GetElectricalField(node);
+        Vec3 field = mode->GetField(node);
         DrawLine3D(node.ToVector3(), (node + field).ToVector3(), YELLOW);
     }
 }
@@ -122,7 +122,6 @@ int main(void)
 {
     InitWindow(0,0, "Optomechanical Coupling Calculator");
     
-    // TODO: Emitter is a Base Class
     // TODO: use unique pointers
     // TODO: check it calculation is Correct
     // TODO: handle e0
@@ -142,22 +141,20 @@ int main(void)
     System system;
     
     // Add light emitter
-    StandingLightEmitter *le = new StandingLightEmitter();
+    PlaneLightMode *le = system.CreateLightMode<PlaneLightMode>();
     le->SetCenter(Vec3(-1.0, 0.0, 0.0));
     le->SetPerturbation(Vec3(0.0, 1.0, 0.0));
     le->SetPropagation(Vec3(1.0, 0.0, 0.0));
     le->SetFrequency(0.9);
     
-    StandingMechanicalEmitter *me = new StandingMechanicalEmitter();
+    PlaneMechanicalMode *me = system.CreateMechanicalMode<PlaneMechanicalMode>();
     me->SetCenter(Vec3(1.0, 0.0, 0.0));
     me->SetPerturbation(Vec3(1.0, 0.0, 0.0));
     me->SetPropagation(Vec3(1.0, 0.0, 0.0));
     
-    system.AddLightEmitter(le);
-    system.AddMechanicalEmitter(me);
+    Object *fabry_perot = system.CreateObject();
 
-    Object &fabry_perot = system.CreateObject();
-    Surface &fabry_perot_mirror = fabry_perot.CreateSurface();
+    Surface &fabry_perot_mirror = fabry_perot->CreateSurface();
     fabry_perot_mirror.DefineNormal(Vec3(-1.0f, 0.0f, 0.0f));
 
     fabry_perot_mirror.AddTriangle(Triangle(
@@ -180,10 +177,21 @@ int main(void)
     {
         if (IsKeyPressed('Z'))
         {
-            camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
-            camera.projection = CAMERA_PERSPECTIVE; 
-            camera_mode = CAMERA_FREE;
-            camera.fovy = 45.0f;                                // Camera field-of-view Y
+            if (camera_mode == CAMERA_ORBITAL)
+            {
+                camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };
+                camera.projection = CAMERA_PERSPECTIVE; 
+                camera_mode = CAMERA_FREE;
+                camera.fovy = 45.0;
+            } else if (camera_mode == CAMERA_FREE)
+            {
+                camera.position = (Vector3){ 10.0f, 10.0f, 10.0f };
+                camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };    
+                camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };
+                camera.fovy = 10.0f;
+                camera.projection = CAMERA_ORTHOGRAPHIC;
+                camera_mode = CAMERA_ORBITAL;
+            }
         }
         
         UpdateCamera(&camera, camera_mode);
@@ -194,9 +202,8 @@ int main(void)
         BeginMode3D(camera);
             DrawGrid(10, 1.0f);
             
-            DrawLightEmitter(*le);
-            DrawMechanicalEmitter(*me);
-
+            DrawLightEmitter(le);
+            DrawMechanicalEmitter(me);
             DrawObject(fabry_perot);
         EndMode3D();
 
