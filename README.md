@@ -1,1 +1,1 @@
-# optomechanic-coupling-calculation
+# Optomechanical coupling constant calculation
