@@ -10,12 +10,6 @@ struct Vec3
     
     Vec3() = default;
     
-    Vec3(const Vec3 &src): 
-        x(src.x), 
-        y(src.y), 
-        z(src.z) 
-    {}
-    
     template <typename U>
     Vec3(U p_x, U p_y, U p_z):
         x(static_cast<double>(p_x)),

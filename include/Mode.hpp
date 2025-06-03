@@ -6,7 +6,10 @@
 class Mode
 {
     public:
+        virtual ~Mode() = default;
+
         virtual void SetFrequency(double frequency);
+
         virtual double GetFrequency() const;
         virtual Vec3 GetField(Vec3 point) const = 0;
 
@@ -26,9 +29,7 @@ class PlaneLightMode : public Mode
         const Vec3 &GetCenter() const;
         const Vec3 &GetPropagation() const;
         const Vec3 &GetPerturbation() const;
-        
         Vec3 GetNode(const float index) const;
-        
         Vec3 GetField(Vec3 point) const override;
 
     private:
@@ -49,7 +50,6 @@ class PlaneMechanicalMode : public Mode
         const Vec3 &GetCenter() const;
         const Vec3 &GetPropagation() const;
         const Vec3 &GetPerturbation() const;
-        
         Vec3 GetField(Vec3 point) const override;
 
     private:
